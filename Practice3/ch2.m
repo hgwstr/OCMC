@@ -1,60 +1,83 @@
-% Параметры
 f1 = 8;
 f2 = f1 + 4;
-f3 = 2 * f1 + 1;
+f3 = f1 * 2 + 1;
 
-% Время
-t = 0:0.01:1;
+t = linspace(0, 1, 1000);
 
-% Определение сигналов
 s1 = cos(2 * pi * f1 * t);
 s2 = cos(2 * pi * f2 * t);
 s3 = cos(2 * pi * f3 * t);
 
-% Сигналы a и b
-a = 2 * s1 + 4 * s2 + s3;
-b = s1 + s2;
+a_t = 2 * s1 + 4 * s2 + s3;
+b_t = s1 + s2;
 
-% Корреляция
-corr_ab = xcorr(a, b);
+corr_ab = sum(a_t .* b_t);
+corr_sa = sum(s1 .* a_t);
+corr_sb = sum(s1 .* b_t);
 
-% Нормализация
-norm_a = sqrt(sum(a.^2));
-norm_b = sqrt(sum(b.^2));
+norm_corr_ab = corr(a_t', b_t');
+norm_corr_sa = corr(s1', a_t');
+norm_corr_sb = corr(s1', b_t');
 
-if norm_a == 0 || norm_b == 0
-    disp('Ошибка: Один из сигналов имеет нулевую энергию.');
-else
-    norm_corr_ab = sum(a .* b) / (norm_a * norm_b);
-    disp('Нормализованная корреляция между a и b:');
-    disp(norm_corr_ab);
-end
+fprintf('Корреляция между a(t) и b(t): %.4f\n', corr_ab);
+fprintf('Корреляция между s1(t) и a(t): %.4f\n', corr_sa);
+fprintf('Корреляция между s1(t) и b(t): %.4f\n', corr_sb);
 
+fprintf('Нормализованная корреляция между a(t) и b(t): %.4f\n', norm_corr_ab);
+fprintf('Нормализованная корреляция между s1(t) и a(t): %.4f\n', norm_corr_sa);
+fprintf('Нормализованная корреляция между s1(t) и b(t): %.4f\n', norm_corr_sb);
 
-disp('Корреляция между a и b:');
-disp(corr_ab);
+a = [0.3, 0.2, -0.1, 4.2, -2, 1.5, 0];
+b = [0.3, 4, -2.2, 1.6, 0.1, 0.1, 0.2];
 
-% Сдвиг массива b и вычисление корреляции
-max_corr = -inf;
-best_shift = 0;
-
-for shift = 0:length(b)-1
-    b_shifted = circshift(b, shift);
-    current_corr = sum(a .* b_shifted) / (norm(a) * norm(b_shifted));
-    %disp(['Сдвиг: ', num2str(shift), ' Корреляция: ', num2str(current_corr)]);
-    if current_corr > max_corr
-        max_corr = current_corr;
-        best_shift = shift;
-    end
-end
-
-
-% Построение графиков
 figure;
-subplot(2,1,1);
-plot(t, a);
-title('Сигнал a');
 
-subplot(2,1,2);
-plot(t, circshift(b, best_shift));
-title(['Сигнал b, сдвинутый на ', num2str(best_shift)]);
+subplot(2, 1, 1);
+plot(a, 'o-');
+title('Массив a');
+xlabel('N');
+ylabel('Значение');
+grid on;
+
+subplot(2, 1, 2);
+plot(b, 'o-');
+title(['Массив b']);
+xlabel('N');
+ylabel('Значение');
+grid on;
+
+N = length(a);
+correlations = zeros(1, N); 
+
+for shift = 0:N-1
+    b_shifted = [b(end-shift+1:end), b(1:end-shift)];
+    correlations(shift + 1) = sum(a .* b_shifted);
+end
+
+[max_corr, max_index] = max(correlations);
+
+fprintf('Максимальная корреляция: %.2f при сдвиге: %d\n', max_corr, max_index - 1);
+
+figure;
+
+subplot(2, 1, 1);
+plot(a, 'o-');
+title('Массив a');
+xlabel('Индекс');
+ylabel('Значение');
+grid on;
+
+b_max_shifted = [b(end-max_index+2:end), b(1:end-max_index+1)];
+subplot(2, 1, 2);
+plot(b_max_shifted, 'o-');
+title(['Сдвинутый массив b (сдвиг: ', num2str(max_index - 1), ')']);
+xlabel('Индекс');
+ylabel('Значение');
+grid on;
+
+figure;
+plot(0:N-1, correlations, '-o');
+title('Взаимная корреляция между a и сдвинутым b');
+xlabel('Сдвиг');
+ylabel('Корреляция');
+grid on;
