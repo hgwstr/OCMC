@@ -163,3 +163,22 @@ end
 function path_loss_fspl = calculate_fspl(distances)
     path_loss_fspl = 20 * log10(distances) + 20 * log10(1.8 * 10^9) - 147.55; % частота 1.8 ГГц
 end
+
+% Расчет необходимого количества базовых станций
+calculate_bs_coverage(area_business_centers_km2, 'UMiNLOS');
+calculate_bs_coverage(area_total_km2, 'Cost231');
+
+function calculate_bs_coverage(area_km2, model_name)
+    if strcmp(model_name, 'UMiNLOS')
+        radius_km = 500 * 10^-3; % радиус в километрах для UMiNLOS
+        area = 2 * pi * radius_km^2; % Площадь одной базовой станции
+    else
+        radius_km = 900 * 10^-3; % радиус в километрах для Cost231
+        area = 1.95 * radius_km^2; % Площадь одной базовой станции
+    end
+
+    % Количество базовых станций
+    bs_count = area_km2 / area;
+
+    fprintf("Необходимое количество базовых станций для модели %s: %.2f\n", model_name, bs_count);
+end
