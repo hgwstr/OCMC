@@ -77,8 +77,58 @@ void calculateAutocorrelationAndCheckMSequence(const std::vector<int>& sequence,
     }
 }
 
-
-   return 0;
+// Функция для взаимной корреляции
+int correlation(const std::vector<int>& seq1, const std::vector<int>& seq2, int length) {
+    int sum = 0;
+    for (int i = 0; i < length; i++) {
+        sum += seq1[i] * seq2[i];
+    }
+    return sum;
 }
 
+int main() {
+    int sequence_length = 31;
 
+    // Первая последовательность Голда (x = 8, y = 15)
+    std::vector<int> x1 = {0, 1, 0, 0, 0}; // 01000
+    std::vector<int> y1 = {0, 1, 1, 1, 1}; // 01111
+    std::vector<int> gold_sequence1 = generateGoldSequence(x1, y1, sequence_length);
+
+    // Вторая последовательность Голда (x = 9, y = 10)
+    std::vector<int> x2 = {0, 1, 0, 0, 1}; // 01001
+    std::vector<int> y2 = {0, 1, 0, 1, 0}; // 01010
+    std::vector<int> gold_sequence2 = generateGoldSequence(x2, y2, sequence_length);
+
+    // Вывод первой последовательности
+    std::cout << "Первая последовательность Голда (x=8, y=15):\n";
+    for (int bit : gold_sequence1) {
+        std::cout << bit << " ";
+    }
+    std::cout << "\n\n";
+
+    // Вывод второй последовательности
+    std::cout << "Вторая последовательность Голда (x=9, y=10):\n";
+    for (int bit : gold_sequence2) {
+        std::cout << bit << " ";
+    }
+    std::cout << "\n\n";
+
+    // Сбалансированность
+    std::cout << "Сбалансированность: ";
+    if (checkBalance(gold_sequence1)) {
+        std::cout << "выполнено\n";
+    } else {
+        std::cout << "не выполнено\n";
+    }
+
+    // Автокорреляция и проверка на m-последовательность
+    std::cout << "\nАвтокорреляция первой последовательности с проверкой на m-последовательность:\n";
+    calculateAutocorrelationAndCheckMSequence(gold_sequence1, sequence_length);
+
+    // Взаимная корреляция между первой и второй последовательностями
+    int cross_correlation = correlation(gold_sequence1, gold_sequence2, sequence_length);
+    std::cout << "\nВзаимная корреляция между первой и второй последовательностями: ";
+    std::cout << cross_correlation << "/" << sequence_length << std::endl;
+
+    return 0;
+}
