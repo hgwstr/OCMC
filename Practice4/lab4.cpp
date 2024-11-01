@@ -1,165 +1,81 @@
 #include <iostream>
-#include <cmath>
-#include <iomanip>
 #include <vector>
-
-
-using namespace std;
-
-
-const int REGISTER_SIZE = 5;
-
-
-// Функция для сдвига регистра x
-void shiftX(int x[REGISTER_SIZE]) {
-   int8_t shiftedElement = (x[3] + x[4]) % 2;
-   for (int i = REGISTER_SIZE - 1; i > 0; i--) {
-       x[i] = x[i - 1];
-   }
-   x[0] = shiftedElement;
-}
-
-
-// Функция для сдвига регистра y
-void shiftY(int y[REGISTER_SIZE]) {
-   int8_t shiftedElement = (y[1] + y[4]) % 2;
-   for (int i = REGISTER_SIZE - 1; i > 0; i--) {
-       y[i] = y[i - 1];
-   }
-   y[0] = shiftedElement;
-}
-
+#include <iomanip>
+#include <cmath>
 
 // Функция для генерации последовательности Голда
-void goldSequence(int x[REGISTER_SIZE], int y[REGISTER_SIZE], int result[], int length) {
-   for (int i = 0; i < length; i++) {
-       result[i] = (x[4] + y[4]) % 2;
-       shiftX(x);
-       shiftY(y);
-   }
+std::vector<int> generateGoldSequence(std::vector<int> x, std::vector<int> y, int length) {
+    std::vector<int> gold_sequence;
+    for (int i = 0; i < length; ++i) {
+        int new_bit_x = x[4] ^ x[2]; // XOR элементов 5 и 3
+        int new_bit_y = y[4] ^ y[2]; // XOR элементов 5 и 3
+        gold_sequence.push_back(x[4] ^ y[4]); // Голд последовательность как XOR выходов двух регистров
+
+        // Обновляем регистры
+        for (int j = 4; j > 0; --j) {
+            x[j] = x[j - 1];
+            y[j] = y[j - 1];
+        }
+        x[0] = new_bit_x;
+        y[0] = new_bit_y;
+    }
+    return gold_sequence;
 }
 
-
-// Циклический сдвиг элементов массива
-void shiftElements(int a[], int length) {
-   int8_t shiftedElement = a[length - 1];
-   for (int i = length - 1; i > 0; i--) {
-       a[i] = a[i - 1];
-   }
-   a[0] = shiftedElement;
+// Функция для циклического сдвига вектора на одну позицию вправо
+std::vector<int> cyclicShift(const std::vector<int>& sequence) {
+    std::vector<int> shifted_sequence = sequence;
+    int last_bit = shifted_sequence.back();
+    shifted_sequence.pop_back();
+    shifted_sequence.insert(shifted_sequence.begin(), last_bit);
+    return shifted_sequence;
 }
 
-
-// Функция для расчёта автокорреляции
-void autocorrelation(int sequence[], int length, double result[]) {
-   for (int i = 0; i <= length; i++) {
-       int shiftedSequence[length];
-       for (int j = 0; j < length; j++) {
-           shiftedSequence[j] = sequence[j];
-       }
-       for (int k = 0; k < i; k++) {
-           shiftElements(shiftedSequence, length);
-       }
-       double correlation = 0;
-       for (int j = 0; j < length; j++) {
-           correlation += sequence[j] * shiftedSequence[j];
-       }
-       double sumSqA = 0, sumSqB = 0;
-       for (int j = 0; j < length; j++) {
-           sumSqA += sequence[j] * sequence[j];
-           sumSqB += shiftedSequence[j] * shiftedSequence[j];
-       }
-       result[i] = correlation / sqrt(sumSqA * sumSqB);
-   }
+// Функция для расчёта корреляции между двумя последовательностями
+int calculateCorrelation(const std::vector<int>& seq1, const std::vector<int>& seq2) {
+    int correlation = 0;
+    for (size_t i = 0; i < seq1.size(); ++i) {
+        correlation += (seq1[i] == seq2[i]) ? 1 : -1;
+    }
+    return correlation;
 }
 
-
-// Функция для расчёта взаимной корреляции
-int correlation(int x[], int y[], int length) {
-   int sum = 0;
-   for (int i = 0; i < length; i++) {
-       sum += x[i] * y[i];
-   }
-   return sum;
+// Сбалансированность
+bool checkBalance(const std::vector<int>& sequence) {
+    int count_ones = 0;
+    for (int bit : sequence) {
+        if (bit == 1) count_ones++;
+    }
+    int count_zeros = sequence.size() - count_ones;
+    return std::abs(count_ones - count_zeros) <= 1;
 }
 
-
-// Функция для вывода таблицы автокорреляции
-void printAutocorrelationTable(int sequence[], int length, double autocorr[]) {
-  
-   cout << endl;
-
-
-   cout << "│Сдвиг│";
-   for (int i = 1; i <= length; i++) {
-       cout << setw(2) << i << "│";
-   }
-   cout << "      Автокорр.   │" << endl;
-
-
-   int shifted_sequence[length];
-
-
-   for (int shift = 0; shift <= length; shift++) {
-       cout << "│" << setw(5) << shift << "│";
-
-
-       for (int i = 0; i < length; i++) {
-           shifted_sequence[i] = sequence[(i + shift) % length];
-           cout << setw(2) << shifted_sequence[i] << "│";
-       }
-
-
-       cout << setw(17) << fixed << setprecision(3) << autocorr[shift] << " │" << endl;
-
-
-   }
-
-
+// Проверка на m-последовательность
+bool isMSequence(const std::vector<int>& sequence) {
+    if (sequence.size() != 31) return false; // Проверка длины последовательности 2^n - 1
+    return checkBalance(sequence); // Дополнительные критерии для m-последовательности
 }
 
-
-int main() {
-   int registerX[REGISTER_SIZE] = {0, 1, 0, 0, 0}; // x = 8
-   int registerY[REGISTER_SIZE] = {0, 1, 1, 1, 1}; // y = 15
-
-
-   int registerX1[REGISTER_SIZE] = {0, 1, 0, 0, 1}; // x = 9
-   int registerY1[REGISTER_SIZE] = {0, 1, 0, 1, 0}; // y = 10
-
-
-   int length = pow(2, REGISTER_SIZE) - 1;
-   int goldSeq1[length];
-   int goldSeq2[length];
-   goldSequence(registerX, registerY, goldSeq1, length);
-   goldSequence(registerX1, registerY1, goldSeq2, length);
-
-
-   cout << "\nПосл-сть Голда (0, 1, 0, 0, 0 и 0, 1, 1, 1, 1): ";
-   for (int i = 0; i < length; i++) {
-       cout << goldSeq1[i] << " ";
-   }
-   cout << endl;
-
-
-   double autocorr1[length + 1];
-   autocorrelation(goldSeq1, length, autocorr1);
-   printAutocorrelationTable(goldSeq1, length, autocorr1);
-
-
-   cout << "\nПосл-сть Голда (0, 1, 0, 0, 1 и 0, 1, 0, 1, 0): ";
-   for (int i = 0; i < length; i++) {
-       cout << goldSeq2[i] << " ";
-   }
-   cout << endl;
-
-
-   double autocorr2[length + 1];
-   autocorrelation(goldSeq2, length, autocorr2);
-   printAutocorrelationTable(goldSeq2, length, autocorr2);
-
-
-   cout << "\nКорреляция между первой и второй последовательностей: " << correlation(goldSeq1, goldSeq2, length) << endl;
+// Вычисление автокорреляции с проверкой на m-последовательность
+void calculateAutocorrelationAndCheckMSequence(const std::vector<int>& sequence, int sequence_length) {
+    std::vector<int> shifted_sequence = sequence;
+    std::cout << "Сдвиг|                                                               |Корреляция| m-последовательность\n";
+    for (int shift = 0; shift < sequence_length; ++shift) {
+        int corr = calculateCorrelation(sequence, shifted_sequence);
+        
+        std::cout << std::setw(4) << shift << " | ";
+        for (int bit : shifted_sequence) {
+            std::cout << bit << " ";
+        }
+        std::cout << "| " << corr << "/" << sequence_length;
+        
+        // Проверка на m-последовательность
+        bool is_m_sequence = isMSequence(shifted_sequence);
+        std::cout << "    | " << (is_m_sequence ? "Да" : "Нет") << "\n";
+        
+        shifted_sequence = cyclicShift(shifted_sequence);
+    }
+}
 
 
    return 0;
