@@ -104,10 +104,10 @@ void testErrorDetectionExtended(const vector<int>& data, const vector<int>& gene
 }
 
 int main() {
-    // Исходные данные (пример для 28 бит)
+    // Исходные данные (28 бит)
     vector<int> data = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
 
-    // Порождающий полином для варианта №8 (x^6 + x^5 + x^4 + x^3 + x^2 + x + 1)
+    // Порождающий полином
     vector<int> generator = {0, 1, 1, 1, 1, 1, 1, 1};
 
     cout << "Testing 28-bit data:" << endl;
