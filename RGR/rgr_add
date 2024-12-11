@@ -1,0 +1,42 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Задаем параметры сигналов
+fs = 1000        # Частота дискретизации
+t = np.linspace(0, 1, fs)  # Временной массив от 0 до 1 сек
+freq1 = 15       # Частота первого сигнала (Гц)
+freq2 = 25     # Частота второго сигнала (Гц)
+amplitude = 1   # Амплитуда сигналов
+noise_levels = [0.1, 0.4, 0.7]  # Уровни шума
+
+# Генерация сигналов и вычисление вероятности успешной синхронизации
+def generate_signals_and_probability(noise_level):
+    # Генерируем два сигнала
+    signal1 = amplitude * np.sin(2 * np.pi * freq1 * t) + np.random.normal(0, noise_level, fs)
+    signal2 = amplitude * np.sin(2 * np.pi * freq2 * t) + np.random.normal(0, noise_level, fs)
+    
+    # Вычисляем корреляцию
+    correlation = np.correlate(signal1, signal2, mode='full')
+    correlation = correlation / np.max(correlation)  # Нормируем
+    return correlation[len(correlation)//2:]  # Берем только положительное время
+
+# Пороговые значения корреляции
+thresholds = np.linspace(0.1, 0.9, 100)
+
+# Строим график
+plt.figure(figsize=(10, 6))
+
+for noise_level in noise_levels:
+    correlation = generate_signals_and_probability(noise_level)
+
+    # Вычисляем вероятность синхронизации
+    probabilities = np.array([(np.sum(correlation > threshold) / len(correlation)) for threshold in thresholds])
+    
+    plt.plot(thresholds, probabilities, label=f'Noise Level = {noise_level}')
+
+plt.title("Вероятность успешной синхронизации в зависимости от порога корреляции")
+plt.xlabel("Порог корреляции")
+plt.ylabel("Вероятность синхронизаций")
+plt.grid(True)
+plt.legend()
+plt.show()
