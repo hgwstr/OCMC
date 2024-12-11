@@ -43,7 +43,7 @@ print(f"Сгенерированный CRC: {crc}")
 bit_sequence_with_crc = bit_sequence + crc
 
 # 4. Добавление стоп-слова
-stop_word = [1, 1, 1, 1, 1]  # Стоп-слово из пяти единиц
+stop_word = [1, 1, 1, 1, 1, 1, 1, 1]  # Стоп-слово из пяти единиц
 final_sequence = bit_sequence_with_crc + stop_word
 print(f"Последовательность с CRC и стоп-словом: {final_sequence}")
 
@@ -180,86 +180,3 @@ if received_crc == calculated_crc:
 
     recovered_text = bits_to_text(data_without_crc[0:len(bit_sequence)])
     print(f"Восстановленный текст: {recovered_text}")
-
-# Дополнение: Построение графика зависимости вероятности точной синхронизации от порога
-
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import butter, lfilter
-
-# Функция для фильтрации
-
-def butter_lowpass_filter(data, cutoff, fs, order=5):
-    nyquist = 0.5 * fs
-    normal_cutoff = cutoff / nyquist
-    b, a = butter(order, normal_cutoff, btype='low', analog=False)
-    y = lfilter(b, a, data)
-    return y
-
-# Функция нахождения синхронизации
-def find_sync(signal, gold_seq, n):
-    gold_samples = bits_to_samples(gold_seq, n)
-    corr = np.correlate(signal, gold_samples, mode="valid")
-    sync_start = np.argmax(corr)
-    return sync_start, corr
-
-# Функция преобразования бит в отсчеты
-def bits_to_samples(bits, n):
-    return [bit for bit in bits for _ in range(n)]
-
-# Параметры моделирования
-n = 10  # Количество отсчетов на бит
-fs = 1000  # Частота дискретизации
-
-# Исходная последовательность Голда
-gold_seq = [1, 0, 1, 1, 0, 1, 0, 0, 1, 1]  # Пример
-final_sequence = gold_seq + [1, 0, 1, 0]  # Пример битовой последовательности
-
-# Временные отсчеты
-signal_samples = bits_to_samples(final_sequence, n)
-signal_length = len(signal_samples) * 2
-
-# Моделирование
-thresholds = np.linspace(0.1, 0.9, 1000)  # Пороги корреляции
-noise_levels = [0.7]  # Уровни шума
-sync_probabilities = {sigma: [] for sigma in noise_levels}
-
-# Генерация данных
-for sigma in noise_levels:
-    for threshold in thresholds:
-        correct_syncs = 0
-        total_trials = 100
-
-        for _ in range(total_trials):
-            # Создаем зашумленный сигнал
-            noise = np.random.normal(0, sigma, signal_length)
-            signal = [0] * signal_length
-            insert_position = np.random.randint(0, signal_length - len(signal_samples))
-            signal[insert_position:insert_position + len(signal_samples)] = signal_samples
-            noisy_signal = [signal[i] + noise[i] for i in range(signal_length)]
-
-            # Фильтрация
-            cutoff_freq = 0.3 * fs
-            filtered_signal = butter_lowpass_filter(noisy_signal, cutoff_freq, fs)
-
-            # Корреляционный приемник
-            sync_start, corr = find_sync(filtered_signal, gold_seq, n)
-            detected = np.max(corr) >= threshold
-
-            # Проверяем точность синхронизации
-            if detected and sync_start == insert_position:
-                correct_syncs += 1
-
-        sync_probabilities[sigma].append(correct_syncs / total_trials)
-
-# Построение графиков
-plt.figure(figsize=(10, 6))
-for sigma in noise_levels:
-    plt.plot(thresholds, sync_probabilities[sigma], label=f"Noise level $\sigma={sigma}$")
-
-plt.title("Вероятность точной синхронизации в зависимости от порога корреляции")
-plt.xlabel("Порог корреляции")
-plt.ylabel("Вероятность точной синхронизации")
-plt.grid()
-plt.legend()
-plt.show()
